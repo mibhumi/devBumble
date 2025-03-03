@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const validator = require("validator");
 
 const userSchema = mongoose.Schema({
     firstName: {
@@ -15,11 +16,21 @@ const userSchema = mongoose.Schema({
         required: true,
         unique: true,
         trim: true,
-        lowercase: true
+        lowercase: true,
+        validate(value) {
+            if(!validator.isEmail(value)) {
+                throw new Error("Invalid Email");
+            }
+        }
     },
     password: {
         type: String,
-        required: true
+        required: true,
+        validate(value) {
+            if(!validator.isStrongPassword(value)) {
+                throw new Error("Enter a strong password");
+            }
+        }
     },
     age: {
         type: String,
@@ -29,13 +40,18 @@ const userSchema = mongoose.Schema({
         type: String,
         validate(value) {
             if(!["male", "female", "others"].includes(value)) {
-                throw new error("Gender data is not valid");
+                throw new Error("Gender data is not valid");
             }
         }
     },
     photoUrl: {
         type: String,
-        default: "https://www.gravatar.com/avatar/2c7d99fe281ecd3bcd65ab915bac6dd5?s=250"
+        default: "https://www.gravatar.com/avatar/2c7d99fe281ecd3bcd65ab915bac6dd5?s=250",
+        validate(value) {
+            if(!validator.isURL(value)) {
+                throw new Error("Invalid URL");
+            }
+        }
     },
     about: {
         type: String
