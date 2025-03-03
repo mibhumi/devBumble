@@ -29,13 +29,35 @@ app.post("/signup", async(req, res) => {
             email,
             password: hashPassword
         });
-        
+
         const result = await user.save(); // return promise
         res.send("user added successfully");
     } catch(error) {
         res.status(401).send("Bad Request" + " " + error.toString());
     }
     
+});
+
+app.post("/login", async(req,res) => {
+
+    try {
+        const {password, email} = req.body;
+        const user = await User.findOne({email: email});
+
+        if(user) {
+            const isPasswordValid = await bcrypt.compare(password, user.password);
+            if(isPasswordValid) {
+                res.send("Login successful");
+            } else {
+                throw new Error("Invalid credential");
+            }
+        } else {
+            throw new Error("Invalid credential");
+        }
+
+    } catch(error) {
+        res.status(400).send("Something went wrong");
+    }
 });
 
 // get user by email
