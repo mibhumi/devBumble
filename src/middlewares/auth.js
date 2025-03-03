@@ -1,12 +1,27 @@
-//auth route
-const adminAuth = (req,res) => {
-    console.log("inside admin auth");
-    const token = "12345";
-    if(token === "56") {
+const jwt = require("jsonwebtoken");
+const User = require("../models/user");
+require('dotenv').config(); 
+
+//authenticate user
+const userAuth = async(req, res, next) => {
+
+    try {
+        const {token} = req.cookies;
+        const decodedToken = await jwt.verify(token, process.env.SECRET, {expiresIn: "1d"});
+        const {_id} = decodedToken;
+        const user = User.findById(_id);
+    
+        if(!user) {
+            throw new Error("User not found");
+        }
+        req.user = user;
         next();
-    } else {
-        res.status(401).send("bad request. auth didn't match");
+    } catch(error) {
+        res.status(400).send("Something went wrong on auth");
     }
+
 };
 
-module.exports = { adminAuth };
+module.exports = { 
+    userAuth,
+};

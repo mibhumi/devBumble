@@ -1,73 +1,34 @@
-console.log("starting a new project");
 const connectDB = require("./config/database");
 const { query } = require("express");
 const express = require("express");
 const bcrypt = require("bcrypt");
-const { adminAuth } = require("./middlewares/auth");
+const { userAuth } = require("./middlewares/auth");
 const app = express();
 const User = require("./models/user");
 const {validateSignUpData} = require("./utils/validation");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+require('dotenv').config(); 
 
 app.use(express.json());
 
-app.post("/signup", async(req, res) => {
+app.use(cookieParser());
 
-    console.log(req.body);
+const authRouter = require("./routes/auth");
+const profileRouter = require("./routes/profile");
+const requestsRouter = require("./routes/requests");
 
-    try {
-        //validate user data
-        validateSignUpData(req);
+app.use("/", authRouter);
+app.use("/", profileRouter);
+app.use("/", requestsRouter);
 
-        //encrypt password
-        const {password} = req.body;
-        const hashPassword = await bcrypt.hash(password, 10);
-
-        console.log("hashpassword", hashPassword);
-        const user = new User({
-            firstName,
-            lastName,
-            email,
-            password: hashPassword
-        });
-
-        const result = await user.save(); // return promise
-        res.send("user added successfully");
-    } catch(error) {
-        res.status(401).send("Bad Request" + " " + error.toString());
-    }
-    
-});
-
-app.post("/login", async(req,res) => {
-
-    try {
-        const {password, email} = req.body;
-        const user = await User.findOne({email: email});
-
-        if(user) {
-            const isPasswordValid = await bcrypt.compare(password, user.password);
-            if(isPasswordValid) {
-                res.send("Login successful");
-            } else {
-                throw new Error("Invalid credential");
-            }
-        } else {
-            throw new Error("Invalid credential");
-        }
-
-    } catch(error) {
-        res.status(400).send("Something went wrong");
-    }
-});
 
 // get user by email
 app.get("/user", async(req,res) => {
     
     const email = req.body.email;
-    console.log("email", email);
     try {
         const userDetail = await User.findOne({email: email});
-        console.log("userDetail: ", userDetail);
 
         if(userDetail) {
             res.status(200).send("User found");
@@ -81,7 +42,7 @@ app.get("/user", async(req,res) => {
 });
 
 //get all the user from database
-app.get("/feed", async(req, res) => {
+app.get("/feed", userAuth, async(req, res) => {
 
     try {
         const users = await User.find({});
@@ -107,16 +68,13 @@ app.patch("/updateUser/:userId", async(req, res) => {
     const userId = req.param?.userId;
     const data = req.body;
     const ALLOWED_UPDATES = ["gender", "age"];
-    console.log(Object.keys(data));
     const isUpdateAllowed = Object.keys(data).every((key) => ALLOWED_UPDATES.includes(key));
-    console.log("isUpdateAllowed", isUpdateAllowed);
     try {
         if(isUpdateAllowed) {
             const updatedData = await User.findByIdAndUpdate({_id: userId}, data, {
                 ReturnDocument: "before", 
                 runValidators: true
             });
-            console.log(updatedData);
             res.status(200).send("User updated sucessfully");
         } else {
             res.status(401).send("Update not allowed");
@@ -129,34 +87,8 @@ app.patch("/updateUser/:userId", async(req, res) => {
 
 connectDB()
     .then( () => {
-        console.log("connected to DB");
         app.listen(3001, ()=>{console.log("Server is listening on port number 3001");});
     })
     .catch(
         (error) => console.log(error)
     );
-
-// //admin auth
-// app.use("/admin", adminAuth, (req,res)=>{res.send("hello 2nd");});
-
-// // request handler
-// app.use("/test", (req,res, next) => {
-//     console.log(req.query);
-//    // res.send({name: "Bhumi"});
-//     next();
-// },
-// (req, res)=>{
-//     console.log("next called");
-//    res.send("successfully calling next");
-// }
-// );
-
-// app.use("/home/:id", (req,res) => {
-//     console.log(req.params);
-//     res.send("Welcome to Home");
-// });
-
-// app.use("/", (req,res) => {
-//     res.send("Hello Bhumi");
-// });
-
