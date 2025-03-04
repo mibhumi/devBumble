@@ -9,8 +9,8 @@ const userAuth = async(req, res, next) => {
         const {token} = req.cookies;
         const decodedToken = await jwt.verify(token, process.env.SECRET, {expiresIn: "1d"});
         const {_id} = decodedToken;
-        const user = User.findById(_id);
-    
+        const user = await User.findById(_id);
+
         if(!user) {
             throw new Error("User not found");
         }
