@@ -9,7 +9,7 @@ authRouter.post("/signup", async(req, res) => {
 
     try {
         //validate user data
-        validateSignUpData(req);
+     //   validateSignUpData(req);
 
         //encrypt password
         const {password, firstName, lastName, email} = req.body;
